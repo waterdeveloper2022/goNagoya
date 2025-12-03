@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>名古屋・中部北陸｜五日冬雪行旅</title>
+    
+    <!-- 載入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- 載入 React 和 ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    
+    <!-- 載入 Babel 用於解析 JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- Google Fonts: Noto Serif TC (標題) & Noto Sans TC (內文) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=Noto+Serif+TC:wght@400;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+        }
+        h1, h2, .font-serif {
+            font-family: 'Noto Serif TC', serif;
+        }
+        /* 隱藏捲軸但保持功能 */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-900">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useMemo } = React;
+
+        // --- 圖示組件 (SVG Icons) ---
+        // 為了單一檔案運作，將 Lucide Icons 轉換為直接的 SVG 組件
+        const IconBase = ({ size = 24, className = "", children, ...props }) => (
+            <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                width={size} 
+                height={size} 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                stroke="currentColor" 
+                strokeWidth="2" 
+                strokeLinecap="round" 
+                strokeLinejoin="round" 
+                className={className} 
+                {...props}
+            >
+                {children}
+            </svg>
+        );
+
+        const Plane = (props) => <IconBase {...props}><path d="M2 22h20"/><path d="M13 6l-7-2.909A1.76 1.76 0 0 0 2.226 5.86l.665 4.381 2.94 1.103a.5.5 0 0 1 .32.463v2.378c0 .227.147.43.37.51l5.367 1.916a2 2 0 0 0 1.92-.352L22 9l-9-3"/></IconBase>;
+        const Hotel = (props) => <IconBase {...props}><path d="M18 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2Z"/><path d="m9 16 .348-.24c1.465-1.013 3.84-1.013 5.304 0L15 16"/><path d="M8 11h.01"/><path d="M16 11h.01"/><path d="M12 11h.01"/><path d="M12 7h.01"/><path d="M8 7h.01"/><path d="M16 7h.01"/><path d="M12 15h.01"/></IconBase>;
+        const MapPin = (props) => <IconBase {...props}><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></IconBase>;
+        const Train = (props) => <IconBase {...props}><rect width="16" height="16" x="4" y="3" rx="2"/><path d="M4 11h16"/><path d="M12 3v8"/><path d="m8 19-2 3"/><path d="m18 22-2-3"/><path d="M8 15h0"/><path d="M16 15h0"/></IconBase>;
+        const Utensils = (props) => <IconBase {...props}><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></IconBase>;
+        const Camera = (props) => <IconBase {...props}><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></IconBase>;
+        const Clock = (props) => <IconBase {...props}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></IconBase>;
+        const CreditCard = (props) => <IconBase {...props}><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></IconBase>;
+        const Ticket = (props) => <IconBase {...props}><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M13 5v2"/><path d="M13 17v2"/><path d="M13 11v2"/></IconBase>;
+        const Luggage = (props) => <IconBase {...props}><path d="M6 20h0a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h0"/><path d="M8 18V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v14"/><path d="M10 20h4"/><circle cx="16" cy="20" r="2"/><circle cx="8" cy="20" r="2"/></IconBase>;
+        const Sun = (props) => <IconBase {...props}><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></IconBase>;
+        const Moon = (props) => <IconBase {...props}><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></IconBase>;
+        const ChevronRight = (props) => <IconBase {...props}><path d="m9 18 6-6-6-6"/></IconBase>;
+        const Snowflake = (props) => <IconBase {...props}><line x1="2" x2="22" y1="12" y2="12"/><line x1="12" x2="12" y1="2" y2="22"/><path d="m20 16-4-4 4-4"/><path d="m4 8 4 4-4 4"/><path d="m16 4-4 4-4-4"/><path d="m8 20 4-4 4 4"/></IconBase>;
+        const Bus = (props) => <IconBase {...props}><path d="M8 6v6"/><path d="M15 6v6"/><path d="M2 12h19.6"/><path d="M18 18h3s.5-1.7.8-2.8c.1-.4.2-.8.2-1.2 0-.4-.1-.8-.2-1.2l-1.4-5C20.1 6.8 19.1 6 18 6H4a2 2 0 0 0-2 2v10h3"/><circle cx="7" cy="18" r="2"/><path d="M9 18h5"/><circle cx="16" cy="18" r="2"/></IconBase>;
+        const ShoppingBag = (props) => <IconBase {...props}><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></IconBase>;
+        const Wind = (props) => <IconBase {...props}><path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2"/><path d="M9.6 4.6A2 2 0 1 1 11 8H2"/><path d="M12.6 19.4A2 2 0 1 0 14 16H2"/></IconBase>;
+        const Cat = (props) => <IconBase {...props}><path d="M12 5c.67 0 1.35.09 2 .26 1.78-2 5.03-2.84 6.42-2.26 1.4.58-.42 7-.42 7 .57 1.07 1 2.24 1 3.44C21 17.9 16.97 21 12 21s-9-3.1-9-7.56c0-1.25.5-2.4 1-3.44 0 0-1.89-6.42-.5-7 1.39-.58 4.72.23 6.5 2.23A9.04 9.04 0 0 1 12 5Z"/><path d="M8 14v.5"/><path d="M16 14v.5"/><path d="M11.25 16.25h1.5"/></IconBase>;
+        const Heart = (props) => <IconBase {...props}><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></IconBase>;
+
+        // --- 資料來源 ---
+        const tripData = {
+          meta: {
+            title: "名古屋・中部北陸｜五日冬雪行旅",
+            subtitle: "Nagoya & Central Japan Winter Trip",
+            dates: "2025.12.04 - 12.08",
+            flight: {
+              out: "CX530 TPE (12:00) -> NGO (15:35)",
+              in: "CX531 NGO (16:40) -> TPE (19:15)",
+              code: "國泰航空",
+              airline: "Cathay Pacific"
+            },
+            hotel: {
+              name: "Comfort Hotel Nagoya Meiekiminami",
+              link: "https://www.google.com/maps/search/?api=1&query=Comfort+Hotel+Nagoya+Meiekiminami",
+              cost: 0, 
+              note: "距離車站稍有距離，需預留步行時間"
+            },
+            sim: {
+              name: "三電信每日2G",
+              link: "",
+              cost: 234 // TWD
+            }
+          },
+          days: [
+            {
+              date: "12/04",
+              dayName: "Day 1",
+              jpDay: "一日目",
+              title: "初抵名古屋",
+              note: "帶著期待的心情起飛！",
+              items: [
+                {
+                  id: "1-1",
+                  time: "12:00-15:35",
+                  type: "flight",
+                  title: "桃園出發 -> 抵達名古屋",
+                  desc: "國泰航空 CX530。抵達後辦理入境手續、領取行李。",
+                  transport: "飛機",
+                  cost: 0,
+                  link: "https://www.google.com/maps/search/?api=1&query=Chubu+Centrair+International+Airport",
+                  icon: Plane
+                },
+                {
+                  id: "1-2",
+                  time: "16:17-16:54",
+                  type: "transport",
+                  title: "機場移動至市區",
+                  desc: "搭乘名鐵特急 μ-SKY 前往名古屋站。",
+                  transport: "名鐵特急",
+                  cost: 980,
+                  link: "https://www.google.com/maps/search/?api=1&query=Meitetsu+Nagoya+Station",
+                  icon: Train
+                },
+                {
+                  id: "1-3",
+                  time: "17:30",
+                  type: "hotel",
+                  title: "飯店 Check-in",
+                  desc: "Comfort Hotel Nagoya Meiekiminami。先安頓行李。",
+                  transport: "步行",
+                  cost: 0,
+                  link: "https://www.google.com/maps/search/?api=1&query=Comfort+Hotel+Nagoya+Meiekiminami",
+                  icon: Hotel
+                },
+                {
+                  id: "1-4",
+                  time: "18:00-19:00",
+                  type: "spot",
+                  title: "熱田神宮 (夜間參拜)",
+                  desc: "轉乘名鐵常滑線至「神宮前」站。享受夜間寧靜氛圍。",
+                  transport: "名鐵常滑線",
+                  cost: 240,
+                  link: "https://www.google.com/maps/search/?api=1&query=Atsuta+Jingu", 
+                  icon: Moon
+                },
+                {
+                  id: "1-5",
+                  time: "19:00",
+                  type: "food",
+                  title: "晚餐：熱田蓬萊軒 (神宮店)",
+                  desc: "名古屋必吃鰻魚飯三吃。",
+                  transport: "步行",
+                  cost: 4500, // 預估
+                  link: "https://www.google.com/maps/search/?api=1&query=Atsuta+Horaiken+Jingu",
+                  icon: Utensils
+                },
+                {
+                  id: "1-6",
+                  time: "21:00",
+                  type: "spot",
+                  title: "綠洲21 & 名古屋塔",
+                  desc: "水之宇宙船夜景。從熱田神宮傳馬町搭名城線至榮。",
+                  transport: "地鐵名城線",
+                  cost: 270, // 地鐵費
+                  link: "https://www.google.com/maps/search/?api=1&query=Oasis+21",
+                  icon: Camera
+                },
+                {
+                  id: "1-7",
+                  time: "22:00",
+                  type: "hotel",
+                  title: "返回飯店休息",
+                  desc: "從榮[希望の広場]搭巴士至柳橋，步行回飯店。",
+                  transport: "巴士",
+                  cost: 210,
+                  link: "https://www.google.com/maps/search/?api=1&query=Comfort+Hotel+Nagoya+Meiekiminami",
+                  icon: Hotel
+                }
+              ]
+            },
+            {
+              date: "12/05",
+              dayName: "Day 2",
+              jpDay: "二日目",
+              title: "歷史古道與下町風情",
+              note: "Klook 一日遊",
+              items: [
+                {
+                  id: "2-1",
+                  time: "08:15",
+                  type: "transport",
+                  title: "一日遊集合",
+                  desc: "地點：名古屋西口 Bic Camera 後的 Ministop 便利店。",
+                  transport: "集合",
+                  cost: 0,
+                  link: "https://www.google.com/maps/search/?api=1&query=Ministop+Meieki+Tsubakicho",
+                  icon: MapPin
+                },
+                {
+                  id: "2-2",
+                  time: "08:30-18:30",
+                  type: "spot",
+                  title: "中山道一日遊 (Klook)",
+                  desc: "犬山城 ➜ 惠那峽 ➜ 馬籠宿 ➜ 妻籠宿。探索古老天守閣與懷舊宿場町。",
+                  transport: "巴士",
+                  cost: 0, // 已預付台幣 1447.5
+                  link: "https://www.google.com/maps/search/?api=1&query=Magome-juku",
+                  icon: Bus
+                },
+                {
+                  id: "2-3",
+                  time: "19:00-20:00",
+                  type: "spot",
+                  title: "大須觀音與商店街",
+                  desc: "參拜大須觀音，逛逛充滿活力的商店街。(伏見轉鶴舞線)",
+                  transport: "地鐵",
+                  cost: 210,
+                  link: "https://www.google.com/maps/search/?api=1&query=Osu+Kannon",
+                  icon: ShoppingBag
+                },
+                {
+                  id: "2-4",
+                  time: "20:00",
+                  type: "food",
+                  title: "晚餐：矢場丼 (Yabaton)",
+                  desc: "矢場町本店。淋上滿滿味噌醬的炸豬排。",
+                  transport: "步行",
+                  cost: 2000,
+                  link: "https://www.google.com/maps/search/?api=1&query=Yabaton+Yabacho+Honten",
+                  icon: Utensils
+                },
+                {
+                  id: "2-5",
+                  time: "21:00",
+                  type: "transport",
+                  title: "返回飯店",
+                  desc: "搭乘公車 (30/32/33/34/36路) 至 Shimohiroi。",
+                  transport: "公車",
+                  cost: 210,
+                  link: "",
+                  icon: Bus
+                }
+              ]
+            },
+            {
+              date: "12/06",
+              dayName: "Day 3",
+              jpDay: "三日目",
+              title: "名城巡禮與光之花園",
+              items: [
+                {
+                  id: "3-1",
+                  time: "08:00-08:30",
+                  type: "spot",
+                  title: "名城公園",
+                  desc: "清晨散步，遠眺城堡。搭乘地鐵名城線。",
+                  transport: "地鐵名城線",
+                  cost: 240,
+                  link: "https://www.google.com/maps/search/?api=1&query=Meijo+Park",
+                  icon: Sun
+                },
+                {
+                  id: "3-2",
+                  time: "09:00-10:30",
+                  type: "spot",
+                  title: "名古屋城",
+                  desc: "參觀金鯱、本丸御殿。",
+                  transport: "步行",
+                  cost: 500,
+                  link: "https://www.google.com/maps/search/?api=1&query=Nagoya+Castle",
+                  icon: Camera
+                },
+                {
+                  id: "3-3",
+                  time: "11:00-12:00",
+                  type: "spot",
+                  title: "德川園",
+                  desc: "搭乘公車 32路前往。日式庭園。",
+                  transport: "公車",
+                  cost: 210,
+                  link: "https://www.google.com/maps/search/?api=1&query=Tokugawaen",
+                  icon: Snowflake
+                },
+                {
+                  id: "3-4",
+                  time: "12:30",
+                  type: "food",
+                  title: "午餐：名古屋名物",
+                  desc: "驛釜棊子麵 (Kishimen) 或 麵家獅子丸 (拉麵)。(名古屋車站周邊)",
+                  transport: "地鐵/公車",
+                  cost: 450,
+                  link: "https://www.google.com/maps/search/?api=1&query=Ekikama+Kishimen",
+                  icon: Utensils
+                },
+                {
+                  id: "3-5",
+                  time: "15:15",
+                  type: "spot",
+                  title: "名花之里 (Nabana no Sato)",
+                  desc: "日本最大級燈海 Illumination。使用近鐵長島套票。",
+                  transport: "近鐵+巴士",
+                  cost: 4170,
+                  link: "https://www.google.com/maps/search/?api=1&query=Nabana+no+Sato", 
+                  icon: Moon
+                },
+                {
+                  id: "3-6",
+                  time: "19:30",
+                  type: "food",
+                  title: "晚餐：長島周邊美食",
+                  desc: "千代壽司或天風拉麵。晚餐後返回名古屋飯店。",
+                  transport: "步行",
+                  cost: 2000,
+                  link: "https://www.google.com/maps/search/?api=1&query=Nagashima+Spa+Land+Food",
+                  icon: Utensils
+                }
+              ]
+            },
+            {
+              date: "12/07",
+              dayName: "Day 4",
+              jpDay: "四日目",
+              title: "童話合掌村與飛驒牛",
+              note: "KKDAY 一日遊",
+              items: [
+                {
+                  id: "4-1",
+                  time: "08:15",
+                  type: "transport",
+                  title: "一日遊集合",
+                  desc: "地點：名古屋西口 Bic Camera 後的 Ministop 便利店。",
+                  transport: "集合",
+                  cost: 0,
+                  link: "https://www.google.com/maps/search/?api=1&query=Ministop+Meieki+Tsubakicho",
+                  icon: MapPin
+                },
+                {
+                  id: "4-2",
+                  time: "08:30-18:30",
+                  type: "spot",
+                  title: "白川鄉合掌村 & 飛驒高山 (KKDAY)",
+                  desc: "世界遺產童話村落、高山古街。午餐於高山老街自理 (推薦飛驒牛串燒、五平餅)。",
+                  transport: "巴士",
+                  cost: 0, // 已預付台幣 1438.5
+                  link: "https://www.google.com/maps/search/?api=1&query=Shirakawa-go",
+                  icon: Bus
+                },
+                {
+                  id: "4-3",
+                  time: "19:00",
+                  type: "food",
+                  title: "晚餐：頂級燒肉 (二選一)",
+                  desc: "A: 馬喰一代 (名古屋 WEST) 或 B: 燒肉 Ace (新榮店)。需搭地鐵至新榮町。",
+                  transport: "地鐵",
+                  cost: 6000, // 預估較高
+                  link: "https://www.google.com/maps/search/?api=1&query=Bakuro+Ichidai+Nagoya+West",
+                  icon: Utensils
+                },
+                {
+                  id: "4-4",
+                  time: "21:00",
+                  type: "spot",
+                  title: "綠洲 21 (Oasis 21) 夜景",
+                  desc: "再次欣賞水之宇宙船夜景、名古屋電視塔。隨後搭公車回飯店。",
+                  transport: "公車",
+                  cost: 210,
+                  link: "https://www.google.com/maps/search/?api=1&query=Oasis+21",
+                  icon: Moon
+                }
+              ]
+            },
+            {
+              date: "12/08",
+              dayName: "Day 5",
+              jpDay: "歸國",
+              title: "常滑招財貓與賦歸",
+              items: [
+                {
+                  id: "5-1",
+                  time: "09:21",
+                  type: "transport",
+                  title: "前往常滑",
+                  desc: "搭乘名鐵特急 NH36 (名古屋 ➜ 常滑)。",
+                  transport: "名鐵",
+                  cost: 750,
+                  link: "https://www.google.com/maps/search/?api=1&query=Tokoname+Station",
+                  icon: Train
+                },
+                {
+                  id: "5-2",
+                  time: "10:00",
+                  type: "spot",
+                  title: "Aeon Mall 常滑 & 招財貓",
+                  desc: "寄放行李後 (430 JPY)，參觀巨大招財貓、最後採購。",
+                  transport: "步行",
+                  cost: 430,
+                  link: "https://www.google.com/maps/search/?api=1&query=Aeon+Mall+Tokoname",
+                  icon: ShoppingBag
+                },
+                {
+                  id: "5-3",
+                  time: "11:32",
+                  type: "transport",
+                  title: "前往機場",
+                  desc: "常滑 ➜ 中部國際機場 (NGO)。",
+                  transport: "名鐵",
+                  cost: 330,
+                  link: "https://www.google.com/maps/search/?api=1&query=Chubu+Centrair+International+Airport",
+                  icon: Plane
+                },
+                {
+                  id: "5-4",
+                  time: "12:00",
+                  type: "spot",
+                  title: "FLIGHT OF DREAMS",
+                  desc: "機場 T2。波音787展示、美食街午餐。",
+                  transport: "步行",
+                  cost: 0,
+                  link: "https://www.google.com/maps/search/?api=1&query=FLIGHT+OF+DREAMS",
+                  icon: Plane
+                },
+                {
+                  id: "5-5",
+                  time: "16:40-19:15",
+                  type: "flight",
+                  title: "返抵台北 (TPE)",
+                  desc: "國泰 CX531。帶著滿滿回憶回家。",
+                  transport: "飛機",
+                  cost: 0,
+                  link: "",
+                  icon: Plane
+                }
+              ]
+            }
+          ]
+        };
+
+        // --- 樣式輔助函式 ---
+        const getTypeStyles = (type) => {
+          switch(type) {
+            case 'flight': return {
+              bg: 'bg-sky-100', // 加深背景色
+              text: 'text-sky-900', 
+              border: 'border-sky-300', // 加深邊框
+              iconColor: 'text-sky-700',
+              shadow: 'shadow-sky-200/50'
+            }; 
+            case 'food': return {
+              bg: 'bg-orange-100', 
+              text: 'text-orange-900', 
+              border: 'border-orange-300',
+              iconColor: 'text-orange-700',
+              shadow: 'shadow-orange-200/50'
+            }; 
+            case 'transport': return {
+              bg: 'bg-slate-100', 
+              text: 'text-slate-900', 
+              border: 'border-slate-300',
+              iconColor: 'text-slate-700',
+              shadow: 'shadow-slate-200/50'
+            }; 
+            case 'spot': return {
+              bg: 'bg-indigo-100', 
+              text: 'text-indigo-900', 
+              border: 'border-indigo-300',
+              iconColor: 'text-indigo-700',
+              shadow: 'shadow-indigo-200/50'
+            }; 
+            case 'hotel': return {
+              bg: 'bg-blue-100', 
+              text: 'text-blue-900', 
+              border: 'border-blue-300',
+              iconColor: 'text-blue-700',
+              shadow: 'shadow-blue-200/50'
+            };
+            default: return {
+              bg: 'bg-gray-100', 
+              text: 'text-gray-900', 
+              border: 'border-gray-300',
+              iconColor: 'text-gray-700',
+              shadow: 'shadow-gray-200/50'
+            };
+          }
+        };
+
+        // --- 組件 ---
+        const EventCard = ({ item }) => {
+          const styles = getTypeStyles(item.type);
+          const Icon = item.icon;
+
+          return (
+            <div className="group relative flex gap-6 pb-12 last:pb-2">
+              {/* Timeline Line (Darker) */}
+              <div className="absolute left-[20px] top-12 bottom-0 w-0.5 bg-slate-300 last:hidden group-last:hidden"></div>
+              
+              {/* Icon Bubble (With Color Background) */}
+              <div className={`flex-shrink-0 w-11 h-11 rounded-full flex items-center justify-center border-2 shadow-md z-10 transition-all duration-300 group-hover:scale-110 ${styles.bg} ${styles.border} ${styles.iconColor}`}>
+                <Icon size={20} />
+              </div>
+
+              {/* Content Card (Solid White + Stronger Shadow) */}
+              <div className={`flex-grow relative rounded-2xl p-5 border shadow-md transition-all duration-300 hover:shadow-xl bg-white border-slate-200 hover:border-sky-200`}>
+                {/* Decorative Tag for Map */}
+                {item.link && (
+                  <a 
+                    href={item.link} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="absolute top-4 right-4 text-slate-400 hover:text-rose-500 transition-colors p-2 bg-slate-50 rounded-full hover:bg-rose-50 border border-slate-100"
+                    title="開啟 Google Map"
+                  >
+                    <MapPin size={18} />
+                  </a>
+                )}
+
+                <div className="mb-2">
+                  <div className="flex items-center gap-2 text-xs font-bold tracking-wide text-slate-500 mb-1 uppercase bg-slate-100 inline-block px-2 py-0.5 rounded">
+                    <Clock size={12} />
+                    {item.time}
+                  </div>
+                  <h3 className="text-lg font-bold text-slate-900 tracking-tight pr-10 leading-snug">{item.title}</h3>
+                </div>
+
+                <p className="text-slate-700 text-sm mb-4 leading-relaxed font-normal">{item.desc}</p>
+
+                <div className="flex flex-wrap items-center gap-3 pt-3 border-t border-slate-100">
+                  {item.transport && (
+                    <div className="flex items-center gap-1.5 text-xs font-medium text-slate-600 bg-slate-100 px-3 py-1.5 rounded-full border border-slate-200">
+                      <Train size={12} />
+                      {item.transport}
+                    </div>
+                  )}
+                  {item.cost > 0 && (
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-amber-700 bg-amber-50 px-3 py-1.5 rounded-full ml-auto border border-amber-200 shadow-sm">
+                      <CreditCard size={12} />
+                      ¥{item.cost.toLocaleString()}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        };
+
+        const InfoCard = ({ title, icon: Icon, children }) => (
+          <div className="bg-white p-5 rounded-xl border border-white shadow-lg hover:shadow-xl transition-all duration-300 ring-1 ring-slate-200/50 opacity-95">
+            <div className="flex items-center gap-2 mb-4 text-slate-800 border-b border-slate-100 pb-2">
+              <Icon size={18} className="text-sky-600" />
+              <h3 className="font-bold text-sm tracking-wider uppercase text-slate-700">{title}</h3>
+            </div>
+            <div className="space-y-3 text-sm text-slate-700 font-medium">
+              {children}
+            </div>
+          </div>
+        );
+
+        // --- 主程式 ---
+        const NagoyaWinterItinerary = () => {
+          const [activeDay, setActiveDay] = useState(0);
+
+          const currentDayData = tripData.days[activeDay];
+          
+          const dailyCost = useMemo(() => {
+            return currentDayData.items.reduce((acc, item) => acc + item.cost, 0);
+          }, [currentDayData]);
+
+          return (
+            <div className="min-h-screen bg-slate-100 font-sans text-slate-900 pb-20 selection:bg-sky-200 selection:text-sky-900 relative overflow-hidden">
+              
+              {/* Background Snow Effect (Static SVGs for atmosphere) - Adjusted for contrast */}
+              <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden bg-slate-100">
+                 <div className="absolute inset-0 bg-gradient-to-b from-sky-50 to-slate-100 opacity-80"></div>
+                <Snowflake className="absolute top-10 left-10 text-sky-200/80 w-24 h-24 animate-pulse" />
+                <Snowflake className="absolute top-40 right-20 text-sky-200/60 w-16 h-16" />
+                <Snowflake className="absolute bottom-20 left-1/3 text-sky-200/80 w-32 h-32" />
+              </div>
+
+              {/* New Cute Banner Area */}
+              <div className="relative z-10 mx-auto max-w-4xl pt-4 px-4">
+                <div className="relative rounded-[2rem] overflow-hidden shadow-2xl h-64 md:h-80 border-4 border-white transform hover:scale-[1.01] transition-transform duration-500 bg-slate-900">
+                    {/* Banner Image */}
+                    <img 
+                      src="https://images.unsplash.com/photo-1518407780159-553810c70038?q=80&w=2000&auto=format&fit=crop" 
+                      alt="Winter Wonderland Shirakawa-go" 
+                      className="w-full h-full object-cover opacity-90"
+                      onError={(e) => {
+                          e.target.onerror = null; 
+                          e.target.src = "https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?q=80&w=2000&auto=format&fit=crop";
+                      }}
+                    />
+                    
+                    {/* Gradient Overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent"></div>
+
+                    {/* Cute Overlay Content */}
+                    <div className="absolute bottom-0 left-0 right-0 p-6 md:p-10 text-white">
+                        <div className="flex items-center gap-3 mb-2 animate-bounce">
+                          <div className="bg-white/20 backdrop-blur-md p-2 rounded-full border border-white/30 shadow-lg">
+                            <Cat size={24} className="text-white" />
+                          </div>
+                          <span className="bg-rose-500 text-white px-3 py-1 rounded-full text-xs font-bold tracking-widest uppercase shadow-lg border border-rose-400">
+                            Winter 2025
+                          </span>
+                        </div>
+                        <h1 className="text-3xl md:text-5xl font-bold mb-2 font-serif drop-shadow-xl flex items-center gap-3 text-white">
+                          {tripData.meta.title}
+                          <Heart className="text-rose-400 fill-rose-400 hidden md:block animate-pulse" size={32} />
+                        </h1>
+                        <p className="text-lg md:text-xl text-sky-50 font-medium drop-shadow-md flex items-center gap-2">
+                          <Snowflake size={16} />
+                          {tripData.meta.subtitle}
+                        </p>
+                    </div>
+                    
+                    {/* Top Right Decoration */}
+                    <div className="absolute top-6 right-6 bg-slate-900/60 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/20 text-sm font-medium flex items-center gap-2 text-white shadow-lg">
+                       <Wind size={16} className="text-sky-300" />
+                       {tripData.meta.dates}
+                    </div>
+                </div>
+              </div>
+
+              <div className="max-w-3xl mx-auto px-4 mt-8 relative z-20">
+                
+                {/* Info Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
+                  <InfoCard title="航班資訊" icon={Plane}>
+                    <div className="flex justify-between items-center group">
+                      <span className="text-slate-500 text-xs font-bold">OUT</span>
+                      <span className="font-bold text-slate-800 group-hover:text-sky-700 transition-colors">{tripData.meta.flight.out}</span>
+                    </div>
+                    <div className="flex justify-between items-center group">
+                      <span className="text-slate-500 text-xs font-bold">IN</span>
+                      <span className="font-bold text-slate-800 group-hover:text-sky-700 transition-colors">{tripData.meta.flight.in}</span>
+                    </div>
+                    <div className="text-xs text-slate-500 pt-1 flex items-center gap-2 font-medium">
+                       <span className="w-1.5 h-1.5 bg-sky-500 rounded-full"></span>
+                       {tripData.meta.flight.code}
+                    </div>
+                  </InfoCard>
+
+                  <InfoCard title="住宿與網路" icon={Hotel}>
+                     <div className="flex flex-col gap-1">
+                      <span className="text-xs text-slate-500 font-bold">HOTEL</span>
+                      <a href={tripData.meta.hotel.link} target="_blank" rel="noreferrer" className="font-bold text-sky-700 hover:text-sky-900 transition-colors flex items-center gap-1">
+                        {tripData.meta.hotel.name}
+                        <ChevronRight size={14} />
+                      </a>
+                    </div>
+                    <div className="flex justify-between items-center pt-2 border-t border-dashed border-slate-200 mt-2">
+                      <span className="text-xs text-slate-500 font-bold">SIM</span>
+                      <span className="font-bold text-slate-800">{tripData.meta.sim.name}</span>
+                    </div>
+                  </InfoCard>
+                </div>
+
+                {/* Day Navigation - Solid Tabs for Visibility */}
+                <div className="sticky top-2 z-30 bg-slate-100/90 backdrop-blur-xl pt-2 pb-4 -mx-4 px-4 mb-4 border-b border-slate-200 shadow-sm">
+                  <div className="flex overflow-x-auto gap-3 no-scrollbar py-1">
+                    {tripData.days.map((day, index) => {
+                      const isActive = activeDay === index;
+                      return (
+                        <button
+                          key={index}
+                          onClick={() => setActiveDay(index)}
+                          className={`relative flex-shrink-0 flex flex-col items-center justify-center min-w-[90px] py-2 px-3 rounded-xl border-2 transition-all duration-200 group ${
+                            isActive 
+                              ? 'bg-sky-600 border-sky-600 text-white shadow-lg translate-y-[-2px]' 
+                              : 'bg-white border-slate-200 text-slate-500 hover:border-sky-300 hover:bg-sky-50'
+                          }`}
+                        >
+                          {isActive && (
+                            <Snowflake size={16} className="absolute -top-1.5 -right-1.5 text-white opacity-90 rotate-12 drop-shadow-md" />
+                          )}
+                          <span className={`text-[10px] uppercase tracking-widest mb-0.5 font-bold ${isActive ? 'text-sky-100' : 'text-slate-400'}`}>
+                            {day.dayName}
+                          </span>
+                          <span className={`text-base font-bold font-serif ${isActive ? 'text-white' : 'text-slate-700'}`}>
+                            {day.jpDay}
+                          </span>
+                          <span className={`text-[10px] font-medium ${isActive ? 'text-sky-100' : 'text-slate-400'}`}>
+                            {day.date}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Main Content Area */}
+                <div className="bg-white rounded-3xl p-6 md:p-8 shadow-xl shadow-slate-300/50 border border-slate-100 min-h-[500px] relative overflow-hidden">
+                  {/* Decorative Ice Shards - Faded */}
+                  <div className="absolute -top-20 -right-20 w-64 h-64 bg-gradient-to-br from-sky-50 to-indigo-50 rounded-full blur-3xl pointer-events-none opacity-50"></div>
+
+                  {/* Day Header */}
+                  <div className="relative flex flex-col md:flex-row md:items-end justify-between mb-10 pb-6 border-b border-slate-100 gap-4">
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="px-2.5 py-1 bg-sky-100 text-sky-800 text-[11px] font-bold tracking-widest uppercase rounded">
+                          Itinerary
+                        </span>
+                        {currentDayData.note && (
+                           <span className="px-2.5 py-1 bg-amber-100 text-amber-800 text-[11px] font-bold border border-amber-200 rounded">
+                             {currentDayData.note}
+                           </span>
+                        )}
+                      </div>
+                      <h2 className="text-3xl font-bold text-slate-900 tracking-tight font-serif">
+                        {currentDayData.title}
+                      </h2>
+                    </div>
+                    
+                    <div className="flex flex-col items-end">
+                      <span className="text-xs text-slate-500 font-bold uppercase tracking-widest mb-1">Estimated Cost (JPY)</span>
+                      <div className="flex items-baseline gap-1 text-slate-800">
+                        <span className="text-sm font-bold">¥</span>
+                        <span className="text-3xl font-bold font-serif text-sky-700">{dailyCost.toLocaleString()}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Timeline */}
+                  <div className="pl-2 relative z-10">
+                    {currentDayData.items.map((item) => (
+                      <EventCard key={item.id} item={item} />
+                    ))}
+                  </div>
+
+                  {currentDayData.items.length === 0 && (
+                     <div className="text-center py-20 text-slate-400 flex flex-col items-center">
+                       <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4 border border-slate-200">
+                         <Snowflake size={24} className="opacity-50 text-slate-500" />
+                       </div>
+                       <p className="font-medium tracking-widest">行程安排中...</p>
+                     </div>
+                  )}
+                </div>
+
+                {/* Footer */}
+                <div className="text-center mt-12 mb-8 space-y-2">
+                  <div className="flex justify-center items-center gap-2 text-slate-400">
+                    <span className="h-px w-8 bg-slate-300"></span>
+                    <Snowflake size={14} />
+                    <span className="h-px w-8 bg-slate-300"></span>
+                  </div>
+                  <p className="text-slate-500 text-xs font-bold tracking-widest">© 2025 名古屋冬日之旅 • WINTER TRAVEL</p>
+                </div>
+              </div>
+            </div>
+          );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<NagoyaWinterItinerary />);
+    </script>
+</body>
+</html>
