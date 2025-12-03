@@ -232,6 +232,7 @@
                   transport: "巴士",
                   cost: 0, // 已預付台幣 1447.5
                   link: "https://www.google.com/maps/search/?api=1&query=Magome-juku",
+                  bookingLink: "https://www.klook.com/zh-TW/activity/175724-day-trip-to-magomejuku-tsumagojuku-and-enakyo-from-nagoya/?spm=SearchResult.SearchResult_LIST&clickId=9d85425ce3",
                   icon: Bus
                 },
                 {
@@ -378,6 +379,7 @@
                   transport: "巴士",
                   cost: 0, // 已預付台幣 1438.5
                   link: "https://www.google.com/maps/search/?api=1&query=Shirakawa-go",
+                  bookingLink: "https://www.kkday.com/zh-tw/product/526215?srsltid=AfmBOooW4gA4rmhp1uPFCDhiIJ7FS5B8ZPNgfbCIgJhJ7iOHvC3d2ts9",
                   icon: Bus
                 },
                 {
@@ -557,26 +559,40 @@
 
               {/* Content Card (Solid White + Stronger Shadow) */}
               <div className={`flex-grow relative rounded-2xl p-5 border shadow-md transition-all duration-300 hover:shadow-xl bg-white border-slate-200 hover:border-sky-200`}>
-                {/* Decorative Tag for Map */}
-                {item.link && (
-                  <a 
-                    href={item.link} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="absolute top-4 right-4 flex items-center gap-1 text-rose-600 bg-rose-50 hover:bg-rose-500 hover:text-white transition-all px-3 py-1.5 rounded-full border border-rose-200 shadow-sm hover:shadow-md hover:-translate-y-0.5"
-                    title="開啟 Google Map"
-                  >
-                    <MapPin size={14} className="stroke-[2.5]" />
-                    <span className="text-xs font-bold">MAP</span>
-                  </a>
-                )}
+                {/* Decorative Tag for Map & Ticket */}
+                <div className="absolute top-4 right-4 flex items-center gap-2">
+                    {item.bookingLink && (
+                      <a 
+                        href={item.bookingLink} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1 text-orange-600 bg-orange-50 hover:bg-orange-500 hover:text-white transition-all px-3 py-1.5 rounded-full border border-orange-200 shadow-sm hover:shadow-md hover:-translate-y-0.5"
+                        title="查看預訂詳情"
+                      >
+                        <Ticket size={14} className="stroke-[2.5]" />
+                        <span className="text-xs font-bold">TICKET</span>
+                      </a>
+                    )}
+                    {item.link && (
+                      <a 
+                        href={item.link} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1 text-rose-600 bg-rose-50 hover:bg-rose-500 hover:text-white transition-all px-3 py-1.5 rounded-full border border-rose-200 shadow-sm hover:shadow-md hover:-translate-y-0.5"
+                        title="開啟 Google Map"
+                      >
+                        <MapPin size={14} className="stroke-[2.5]" />
+                        <span className="text-xs font-bold">MAP</span>
+                      </a>
+                    )}
+                </div>
 
                 <div className="mb-2">
                   <div className="flex items-center gap-2 text-xs font-bold tracking-wide text-slate-500 mb-1 uppercase bg-slate-100 inline-block px-2 py-0.5 rounded">
                     <Clock size={12} />
                     {item.time}
                   </div>
-                  <h3 className="text-lg font-bold text-slate-900 tracking-tight pr-10 leading-snug">{item.title}</h3>
+                  <h3 className="text-lg font-bold text-slate-900 tracking-tight pr-24 leading-snug">{item.title}</h3>
                 </div>
 
                 <p className="text-slate-700 text-sm mb-4 leading-relaxed font-normal">{item.desc}</p>
